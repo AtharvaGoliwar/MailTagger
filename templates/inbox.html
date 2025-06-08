@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Email Classifier - Inbox</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header h1 {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
+        }
+
+        .stats-bar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .stat-icon.emails { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .stat-icon.classified { background: linear-gradient(135deg, #28a745, #20c997); }
+        .stat-icon.attachments { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+
+        .inbox-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .inbox-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .inbox-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .refresh-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .email-list {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .email-item {
+            border-bottom: 1px solid #e9ecef;
+            padding: 25px 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .email-item:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            transform: translateX(5px);
+        }
+
+        .email-item:last-child {
+            border-bottom: none;
+        }
+
+        .email-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .email-subject {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            flex: 1;
+            margin-right: 15px;
+        }
+
+        .email-date {
+            font-size: 12px;
+            color: #6c757d;
+            white-space: nowrap;
+            background: #f8f9fa;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+
+        .email-from {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .email-preview {
+            color: #6c757d;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .email-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tag.work { background: linear-gradient(135deg, #007bff, #0056b3); }
+        .tag.personal { background: linear-gradient(135deg, #28a745, #1e7e34); }
+        .tag.finance { background: linear-gradient(135deg, #ffc107, #e0a800); }
+        .tag.shopping { background: linear-gradient(135deg, #e83e8c, #bd2130); }
+        .tag.travel { background: linear-gradient(135deg, #20c997, #17a2b8); }
+        .tag.urgent { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .tag.promotion { background: linear-gradient(135deg, #fd7e14, #e55100); }
+
+        .confidence-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .confidence-bar {
+            width: 60px;
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+        }
+
+        .attachment-indicator {
+            color: #ffc107;
+            font-size: 16px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+        }
+
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 30px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .email-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+            top: 50px;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 30px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header {
+                padding: 20px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .email-item {
+                padding: 20px;
+            }
+
+            .email-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .email-footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats-bar {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-brain"></i>
+                AI Email Classifier
+            </h1>
+            <div class="header-actions">
+                <button class="btn" onclick="refreshInbox()">
+                    <i class="fas fa-sync-alt" id="refresh-icon"></i>
+                    Refresh
+                </button>
+                <a href="/logout" class="btn btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-icon emails">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div>
+                    <div style="font-size: 24px; font-weight: 700;" id="total-emails">{{ emails|length }}</div>
+                    <div style="font-size: 12px; opacity: 0.7;">Total Emails</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon classified">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <div>
+                    <div style="font-size: 24px; font-weight: 700;" id="classified-emails">
+                        {{ emails|selectattr('predicted_tags')|list|length }}
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.7;">Classified</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon attachments">
+                    <i class="fas fa-paperclip"></i>
+                </div>
+                <div>
+                    <div style="font-size: 24px; font-weight: 700;" id="emails-with-attachments">
+                        {{ emails|selectattr('has_attachments')|list|length }}
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.7;">With Attachments</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inbox Container -->
+        <div class="inbox-container">
+            <div class="inbox-header">
+                <div class="inbox-title">
+                    <i class="fas fa-inbox"></i>
+                    Inbox
+                </div>
+                <div class="refresh-status">
+                    <span id="last-refresh">Just now</span>
+                    <i class="fas fa-circle pulse" style="font-size: 8px; color: #28a745;" id="refresh-indicator"></i>
+                </div>
+            </div>
+
+            <div class="email-list" id="email-list">
+                {% if emails %}
+                    {% for email in emails %}
+                    <div class="email-item" onclick="openEmailModal('{{ email.id }}')">
+                        <div class="email-header">
+                            <div class="email-subject">{{ email.subject }}</div>
+                            <div class="email-date">{{ email.date }}</div>
+                        </div>
+                        
+                        <div class="email-from">
+                            <i class="fas fa-user-circle"></i>
+                            {{ email.from }}
+                            {% if email.has_attachments %}
+                                <i class="fas fa-paperclip attachment-indicator" title="{{ email.attachment_count }} attachment(s)"></i>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="email-preview">{{ email.body_preview }}</div>
+                        
+                        <div class="email-footer">
+                            <div class="tags-container">
+                                {% for tag in email.predicted_tags %}
+                                    <span class="tag {{ tag }}">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            {% if email.confidence_scores %}
+                                <div class="confidence-indicator">
+                                    <span>Confidence:</span>
+                                    <div class="confidence-bar">
+                                       style="width: {{ (email.confidence_scores.values() | list | max * 100) | round }}%;"
+
+                                    </div>
+                                    <span>{{ (email.confidence_scores.values()|list|max * 100)|round }}%</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No emails found</h3>
+                        <p>Your inbox appears to be empty or there was an issue loading your emails.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Modal -->
+    <div class="email-modal" id="email-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-subject">Email Details</h3>
+                <button class="close-modal" onclick="closeEmailModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading email details...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh functionality
+        let refreshTimer;
+        let lastRefreshTime = new Date();
+
+        function updateLastRefreshTime() {
+            const now = new Date();
+            const diff = Math.floor((now - lastRefreshTime) / 1000);
+            const refreshElement = document.getElementById('last-refresh');
+            
+            if (diff < 60) {
+                refreshElement.textContent = diff === 0 ? 'Just now' : `${diff}s ago`;
+            } else if (diff < 3600) {
+                refreshElement.textContent = `${Math.floor(diff / 60)}m ago`;
+            } else {
+                refreshElement.textContent = `${Math.floor(diff / 3600)}h ago`;
+            }
+        }
+
+        function refreshInbox() {
+            const refreshIcon = document.getElementById('refresh-icon');
+            const refreshIndicator = document.getElementById('refresh-indicator');
+            
+            refreshIcon.style.animation = 'spin 1s linear infinite';
+            refreshIndicator.style.color = '#ffc107';
+            
+            // Simulate refresh - in real implementation, this would fetch new emails
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+
+        function startAutoRefresh() {
+            // Refresh every 5 minutes
+            refreshTimer = setInterval(() => {
+                fetch('/inbox')
+                    .then(response => {
+                        if (response.ok) {
+                            lastRefreshTime = new Date();
+                            document.getElementById('refresh-indicator').style.color = '#28a745';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Refresh failed:', error);
+                        document.getElementById('refresh-indicator').style.color = '#dc3545';
+                    });
+            }, 300000); // 5 minutes
+
+            // Update refresh time display every 30 seconds
+            setInterval(updateLastRefreshTime, 30000);
+        }
+
+        function openEmailModal(emailId) {
+            const modal = document.getElementById('email-modal');
+            const modalBody = document.getElementById('modal-body');
+            const modalSubject = document.getElementById('modal-subject');
+            
+            modal.style.display = 'block';
+            modalBody.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading email details...</p>
+                </div>
+            `;
+            
+            // Fetch email details
+            fetch(`/api/email/${emailId}`)
+                .then(response => response.json())
+                .then(data => {
+                    modalSubject.textContent = data.subject;
+                    let processedBody = data.body;
+
+                    if (data.attachments && data.attachments.length > 0) {
+                        data.attachments.forEach(attachment => {
+                            if (attachment.mime_type.startsWith('image/')) {
+                                const imageHtml = `
+                                    <div style="margin: 15px 0; text-align: center;">
+                                        <img src="/api/attachment/${emailId}/${attachment.attachment_id}" 
+                                            alt="${attachment.filename}" 
+                                            style="max-width: 100%; height: auto; border-radius: 8px; cursor: pointer; border: 2px solid #e9ecef;" 
+                                            onclick="viewImageFullSize('${attachment.filename}', '/api/attachment/${emailId}/${attachment.attachment_id}')"
+                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                        <div style="display: none; padding: 20px; text-align: center; color: #6c757d; border: 1px dashed #ccc; border-radius: 8px;">
+                                            <i class="fas fa-image" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                            <div>Unable to preview ${attachment.filename}</div>
+                                        </div>
+                                        <div style="font-size: 0.9em; color: #6c757d; margin-top: 8px;">${attachment.filename}</div>
+                                    </div>
+                                `;
+
+                                // Utility to escape special regex characters
+                                function escapeRegex(str) {
+                                    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                }
+
+                                
+                                const filename = attachment.filename;
+                                const attachmentUrl = `${window.location.origin}/api/attachment/${emailId}/${attachment.attachment_id}`;
+                                const escapedFilename = escapeRegex(filename);
+                                // Match any <img> tag with alt="filename"
+                                const imgTagPattern = new RegExp(
+                                    `<img\\b([^>]*?alt=["']${escapedFilename}["'][^>]*?)>`,
+                                    'gi'
+                                );
+
+                                let matched = false;
+
+                                // Replace any <img> tag with matching alt and replace the src
+                                 processedBody = processedBody.replace(imgTagPattern, (match, attrs) => {
+                                    matched = true;
+
+                                    // Replace src="..." with our API URL
+                                    let updatedAttrs;
+                                    if (/src=["'][^"']*["']/.test(attrs)) {
+                                        updatedAttrs = attrs.replace(/src=["'][^"']*["']/, `src="${attachmentUrl}"`);
+                                    } else {
+                                        updatedAttrs = `src="${attachmentUrl}" ` + attrs;
+                                    }
+
+                                    return `<img ${updatedAttrs}>`;
+                                });
+
+                                // If not matched inline, append at end
+                                if (!matched) {
+                                    processedBody += `<br><img src="${attachmentUrl}" alt="${filename}">`;
+                                }
+                            }
+                        });
+                    }
+
+                    modalBody.innerHTML = `
+                        <div style="margin-bottom: 20px;">
+                            <strong>From:</strong> ${data.from}<br>
+                            <strong>Date:</strong> ${data.date}<br>
+                            ${data.attachments && data.attachments.length > 0 ? 
+                                `<strong>Attachments:</strong> ${data.attachments.length} file(s)<br>` : ''}
+                        </div>
+                        
+                        ${data.classification && data.classification.predicted_tags && data.classification.predicted_tags.length > 0 ? `
+                        <div style="margin-bottom: 20px;">
+                            <strong>AI Classification:</strong><br>
+                            <div style="margin-top: 10px;">
+                                ${data.classification.predicted_tags.map(tag => `<span class="tag ${tag}">${tag}</span>`).join(' ')}
+                            </div>
+                        </div>
+                        ` : ''}
+
+
+                            
+                            ${data.attachments && data.attachments.length > 0 ? `
+                            <div style="margin-bottom: 20px;">
+                                <strong>Attachments:</strong>
+                                <div style="margin-top: 10px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                                    ${data.attachments.map(attachment => {
+                                        const isImage = attachment.mime_type.startsWith('image/');
+                                        return `
+                                        <div style="display: flex; align-items: ${isImage ? 'flex-start' : 'center'}; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                                            <div style="display: flex; align-items: ${isImage ? 'flex-start' : 'center'}; flex: 1;">
+                                                <i class="fas ${getFileIcon(attachment.mime_type)}" style="margin-right: 10px; color: #6c757d; margin-top: ${isImage ? '5px' : '0'};"></i>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500;">${attachment.filename}</div>
+                                                    <div style="font-size: 0.85em; color: #6c757d; margin-bottom: ${isImage ? '10px' : '0'};">
+                                                        ${formatFileSize(attachment.size)} • ${attachment.mime_type}
+                                                    </div>
+                                                    ${isImage ? `
+                                                        <div style="margin-top: 10px;">
+                                                            <img src="/api/attachment/${emailId}/${attachment.attachment_id}" 
+                                                                alt="${attachment.filename}" 
+                                                                style="max-width: 300px; max-height: 200px; border-radius: 8px; cursor: pointer; border: 2px solid #e9ecef;" 
+                                                                onclick="viewImageFullSize('${attachment.filename}', '/api/attachment/${emailId}/${attachment.attachment_id}')"
+                                                                onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                                            <div style="display: none; padding: 20px; text-align: center; color: #6c757d; border: 1px dashed #ccc; border-radius: 8px;">
+                                                                <i class="fas fa-image" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                                                <div>Unable to preview image</div>
+                                                            </div>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                                <button onclick="downloadAttachment('${emailId}', '${attachment.attachment_id}', '${attachment.filename}')" 
+                                                        class="btn btn-sm btn-outline-primary" 
+                                                        style="border-radius: 20px; padding: 5px 15px; white-space: nowrap;">
+                                                    <i class="fas fa-download"></i> Download
+                                                </button>
+                                                ${isImage ? `
+                                                    <button onclick="viewImageFullSize('${attachment.filename}', '/api/attachment/${emailId}/${attachment.attachment_id}')" 
+                                                            class="btn btn-sm btn-outline-secondary" 
+                                                            style="border-radius: 20px; padding: 5px 15px; white-space: nowrap;">
+                                                        <i class="fas fa-expand"></i> View
+                                                    </button>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+                        
+                        <div style="border-top: 1px solid #e9ecef; padding-top: 20px;">
+                            <strong>Email Content:</strong>
+                            <div style="margin-top: 15px; padding: 20px; background: #f8f9fa; border-radius: 10px; max-height: 400px; overflow-y: auto;">
+                                ${data.body_type === 'html' ? processedBody : `<pre style="white-space: pre-wrap; font-family: inherit;">${processedBody}</pre>`}
+                            </div>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.log(error)
+                    modalBody.innerHTML = `
+                        <div style="text-align: center; color: #dc3545;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                            <p>Failed to load email details. Please try again.</p>
+                        </div>
+                    `;
+                });
+        }
+
+        // Function to download attachments
+        // function downloadAttachment(emailId, attachmentId, filename) {
+        //     // Show loading state on the button
+        //     const button = event.target.closest('button');
+        //     const originalHTML = button.innerHTML;
+        //     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+        //     button.disabled = true;
+            
+        //     // Create a temporary link to trigger download
+        //     const link = document.createElement('a');
+        //     link.href = `/api/attachment/${emailId}/${attachmentId}`;
+        //     link.download = filename;
+        //     link.style.display = 'none';
+            
+        //     document.body.appendChild(link);
+        //     link.click();
+        //     document.body.removeChild(link);
+            
+        //     // Reset button state after a short delay
+        //     setTimeout(() => {
+        //         button.innerHTML = originalHTML;
+        //         button.disabled = false;
+        //     }, 2000);
+        // }
+
+        // // Helper function to format file sizes
+        // function formatFileSize(bytes) {
+        //     if (bytes === 0) return '0 Bytes';
+            
+        //     const k = 1024;
+        //     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        //     const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+        //     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        // }
+
+
+        // Helper function to get appropriate file icon
+        function getFileIcon(mimeType) {
+            if (mimeType.startsWith('image/')) return 'fa-image';
+            if (mimeType.includes('pdf')) return 'fa-file-pdf';
+            if (mimeType.includes('word') || mimeType.includes('document')) return 'fa-file-word';
+            if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'fa-file-excel';
+            if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return 'fa-file-powerpoint';
+            if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('archive')) return 'fa-file-archive';
+            if (mimeType.startsWith('text/')) return 'fa-file-alt';
+            if (mimeType.startsWith('video/')) return 'fa-file-video';
+            if (mimeType.startsWith('audio/')) return 'fa-file-audio';
+            return 'fa-paperclip';
+        }
+
+        // Function to view image in full size
+        function viewImageFullSize(filename, imageUrl) {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                cursor: pointer;
+            `;
+            
+            // Create image container
+            const container = document.createElement('div');
+            container.style.cssText = `
+                position: relative;
+                max-width: 90%;
+                max-height: 90%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            `;
+            
+            // Create image element
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = filename;
+            img.style.cssText = `
+                max-width: 100%;
+                max-height: 80vh;
+                object-fit: contain;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            `;
+            
+            // Create filename label
+            const label = document.createElement('div');
+            label.textContent = filename;
+            label.style.cssText = `
+                color: white;
+                font-size: 1.1em;
+                margin-top: 15px;
+                text-align: center;
+                padding: 10px 20px;
+                background: rgba(0, 0, 0, 0.7);
+                border-radius: 20px;
+            `;
+            
+            // Create close button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            closeBtn.style.cssText = `
+                position: absolute;
+                top: -15px;
+                right: -15px;
+                background: #dc3545;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                font-size: 1.2em;
+                cursor: pointer;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+                z-index: 10001;
+            `;
+            
+            // Create download button for full-size view
+            const downloadBtn = document.createElement('button');
+            downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+            downloadBtn.style.cssText = `
+                margin-top: 10px;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 20px;
+                padding: 10px 20px;
+                cursor: pointer;
+                font-size: 1em;
+            `;
+            
+            // Add event listeners
+            closeBtn.onclick = (e) => {
+                e.stopPropagation();
+                document.body.removeChild(overlay);
+            };
+            
+            overlay.onclick = (e) => {
+                if (e.target === overlay) {
+                    document.body.removeChild(overlay);
+                }
+            };
+            
+            downloadBtn.onclick = (e) => {
+                e.stopPropagation();
+                const link = document.createElement('a');
+                link.href = imageUrl;
+                link.download = filename;
+                link.click();
+            };
+            
+            // Handle image load error
+            img.onerror = () => {
+                img.style.display = 'none';
+                const errorMsg = document.createElement('div');
+                errorMsg.innerHTML = `
+                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ffc107; margin-bottom: 15px;"></i>
+                    <div style="color: white; font-size: 1.2em;">Unable to load image</div>
+                `;
+                errorMsg.style.cssText = 'text-align: center; color: white;';
+                container.insertBefore(errorMsg, label);
+            };
+            
+            // Assemble modal
+            container.appendChild(closeBtn);
+            container.appendChild(img);
+            container.appendChild(label);
+            container.appendChild(downloadBtn);
+            overlay.appendChild(container);
+            document.body.appendChild(overlay);
+            
+            // Prevent scrolling
+            document.body.style.overflow = 'hidden';
+            
+            // Restore scrolling when modal is closed
+            const originalClose = closeBtn.onclick;
+            const originalOverlayClick = overlay.onclick;
+            
+            closeBtn.onclick = (e) => {
+                document.body.style.overflow = '';
+                originalClose(e);
+            };
+            
+            overlay.onclick = (e) => {
+                if (e.target === overlay) {
+                    document.body.style.overflow = '';
+                    originalOverlayClick(e);
+                }
+            };
+        }
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+
+
+        function closeEmailModal() {
+            document.getElementById('email-modal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('email-modal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeEmailModal();
+            }
+        });
+
+        // Close modal with ESC key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeEmailModal();
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            startAutoRefresh();
+            updateLastRefreshTime();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+            }
+        });
+    </script>
+</body>
+</html>

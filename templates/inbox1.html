@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gmail Inbox</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4285f4;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .logout-btn {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .email-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .email-item {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .email-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            border-color: #4285f4;
+        }
+
+        .email-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4285f4, #34a853, #fbbc05, #ea4335);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .email-item:hover::before {
+            transform: scaleX(1);
+        }
+
+        .email-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .email-subject {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #1a73e8;
+            margin-bottom: 5px;
+            flex: 1;
+        }
+
+        .email-from {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .email-date {
+            color: #999;
+            font-size: 0.8em;
+            white-space: nowrap;
+            margin-left: 15px;
+        }
+
+        .email-body {
+            color: #555;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+
+        .attachment-indicator {
+            display: inline-flex;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .attachment-indicator::before {
+            content: '📎';
+            margin-right: 4px;
+        }
+
+        .no-emails {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 60px 0;
+            font-size: 1.2em;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 2% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            position: relative;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: 500;
+        }
+
+        .modal-header .email-meta {
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        .close:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 30px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .email-content {
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .email-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .attachments-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .attachments-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        .attachment-item:hover {
+            background: #e9ecef;
+        }
+
+        .attachment-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .attachment-info {
+            flex: 1;
+        }
+
+        .attachment-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .attachment-size {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4285f4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .email-header {
+                flex-direction: column;
+            }
+
+            .email-date {
+                margin-left: 0;
+                margin-top: 5px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Gmail Inbox</h1>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+        
+        <div class="email-list">
+            {% if emails %}
+                {% for email in emails %}
+                <div class="email-item" onclick="openEmail('{{ email.id }}')">
+                    <div class="email-header">
+                        <div class="email-info">
+                            <div class="email-subject">{{ email.subject }}</div>
+                            <div class="email-from">From: {{ email.from }}</div>
+                            {% if email.has_attachments %}
+                                <div class="attachment-indicator">{{ email.attachment_count }} attachment(s)</div>
+                            {% endif %}
+                        </div>
+                        <div class="email-date">{{ email.date }}</div>
+                    </div>
+                    <div class="email-body">
+                        {{ email.body_preview }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-emails">
+                    No emails found or unable to load emails.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal for full email -->
+    <div id="emailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close">&times;</span>
+                <h2 id="modalSubject">Loading...</h2>
+                <div class="email-meta">
+                    <div id="modalFrom"></div>
+                    <div id="modalDate"></div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent" class="loading">Loading email content...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get modal elements
+        const modal = document.getElementById('emailModal');
+        const closeBtn = document.getElementsByClassName('close')[0];
+
+        // Function to open email in modal
+        async function openEmail(emailId) {
+            modal.style.display = 'block';
+            
+            // Reset modal content
+            document.getElementById('modalSubject').textContent = 'Loading...';
+            document.getElementById('modalFrom').textContent = '';
+            document.getElementById('modalDate').textContent = '';
+            document.getElementById('modalContent').innerHTML = '<div class="loading">Loading email content...</div>';
+
+            try {
+                const response = await fetch(`/api/email/${emailId}`);
+                const emailData = await response.json();
+
+                if (emailData.error) {
+                    throw new Error(emailData.error);
+                }
+
+                // Update modal content
+                document.getElementById('modalSubject').textContent = emailData.subject;
+                document.getElementById('modalFrom').textContent = `From: ${emailData.from}`;
+                document.getElementById('modalDate').textContent = emailData.date;
+
+                // Set email content
+                let contentHtml = '';
+                
+                if (emailData.body_type === 'html') {
+                    contentHtml = `<div class="email-content">${emailData.body}</div>`;
+                } else {
+                    contentHtml = `<div class="email-content" style="white-space: pre-wrap;">${emailData.body}</div>`;
+                }
+
+                // Add attachments if any
+                if (emailData.attachments && emailData.attachments.length > 0) {
+                    contentHtml += '<div class="attachments-section">';
+                    contentHtml += '<div class="attachments-title">📎 Attachments</div>';
+                    
+                    emailData.attachments.forEach(attachment => {
+                        const sizeKB = Math.round(attachment.size / 1024);
+                        contentHtml += `
+                            <div class="attachment-item">
+                                <div class="attachment-icon">📄</div>
+                                <div class="attachment-info">
+                                    <div class="attachment-name">${attachment.filename}</div>
+                                    <div class="attachment-size">${sizeKB} KB</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    contentHtml += '</div>';
+                }
+
+                document.getElementById('modalContent').innerHTML = contentHtml;
+
+            } catch (error) {
+                document.getElementById('modalContent').innerHTML = `
+                    <div style="color: #dc3545; text-align: center; padding: 20px;">
+                        Error loading email: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Close modal when clicking the X
+        closeBtn.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && modal.style.display === 'block') {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Add hover effect for email items
+        document.querySelectorAll('.email-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>
