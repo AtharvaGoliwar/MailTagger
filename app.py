@@ -1072,6 +1072,10 @@ def inbox():
                     id=msg['id'], 
                     format='full'
                 ).execute()
+
+                profile = service.users().getProfile(userId='me').execute()
+                user_email = profile['emailAddress']
+
                 
                 headers = msg_data['payload']['headers']
                 subject = sender = date = "N/A"
@@ -1115,7 +1119,7 @@ def inbox():
                 print(f"Error processing message {msg['id']}: {e}")
                 continue
 
-        return render_template('inbox.html', emails=email_list)
+        return render_template('inbox.html', emails=email_list,user_email=user_email)
     
     except Exception as e:
         return f"Error accessing Gmail: {e}. Please try logging in again."
