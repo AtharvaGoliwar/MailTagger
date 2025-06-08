@@ -5,3 +5,7 @@ credentials.json
 data/
 app2.py
 .gitignore
+
+
+# Allow OAuth over HTTP for development (REMOVE IN PRODUCTION!)
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'

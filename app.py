@@ -729,8 +729,7 @@ from google.auth.transport.requests import Request
 from bs4 import BeautifulSoup
 import re
 
-# Allow OAuth over HTTP for development (REMOVE IN PRODUCTION!)
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 
 app = Flask(__name__)
 app.secret_key = 'REPLACE_THIS_WITH_SECRET_KEY'
